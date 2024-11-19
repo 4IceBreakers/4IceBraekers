@@ -3,7 +3,7 @@ import pygame
 import sys
 import os
 from pacman import PacmanGame
-
+# wntjr
 # Pygame 초기화
 pygame.init()
 

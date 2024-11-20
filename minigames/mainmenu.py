@@ -4,6 +4,7 @@ import sys
 import os
 from canon import CannonGame
 from pacman import PacmanGame
+from tiles import run_tile_game
 
 # Pygame 초기화
 pygame.init()
@@ -105,6 +106,7 @@ class MainMenu:
                   "종료", (200, 50, 50))
         ]
         
+        
     def run(self):
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("미니게임 컬렉션")
@@ -125,6 +127,14 @@ class MainMenu:
                         game = PacmanGame()
                         game.run()
                         pygame.init()
+                        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                        pygame.display.set_caption("미니게임 컬렉션")
+                        return
+                    elif result == "타일즈":
+                        pygame.quit()
+                        run_tile_game()
+                        pygame.init()
+                        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                         pygame.display.set_caption("미니게임 컬렉션")
                         return  # 메인 메뉴로 복귀
                     elif result == "캐논":

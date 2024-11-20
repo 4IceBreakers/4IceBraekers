@@ -2,6 +2,7 @@
 import pygame
 import sys
 import os
+from canon import CannonGame
 from pacman import PacmanGame
 
 # Pygame 초기화
@@ -28,6 +29,7 @@ if os.name == 'nt':  # Windows
 elif os.name == 'posix':  # macOS
     title_font = pygame.font.SysFont("applegothic", 74, bold=True)
     menu_font = pygame.font.SysFont("applegothic", 54)
+
 
 def draw_gradient_background(surface):
     """그라데이션 배경 그리기"""
@@ -104,14 +106,15 @@ class MainMenu:
         ]
         
     def run(self):
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("미니게임 컬렉션")
         clock = pygame.time.Clock()
-        
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                    
                 for button in self.buttons:
                     result = button.handle_event(event)
                     if result == "종료":
@@ -122,10 +125,15 @@ class MainMenu:
                         game = PacmanGame()
                         game.run()
                         pygame.init()
-                        global screen
-                        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                         pygame.display.set_caption("미니게임 컬렉션")
-                        return
+                        return  # 메인 메뉴로 복귀
+                    elif result == "캐논":
+                        pygame.quit()
+                        game = CannonGame()
+                        game.run()
+                        pygame.init()
+                        pygame.display.set_caption("미니게임 컬렉션")
+                        return  # 메인 메뉴로 복귀
                     elif result:
                         print(f"{result} 게임 시작!")
             

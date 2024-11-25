@@ -1,6 +1,11 @@
 from random import randrange
-from turtle import Screen, clear, goto, dot, shapesize, update, ontimer, setup, hideturtle, up, tracer, onscreenclick, listen, shape, write, pencolor, fillcolor, stamp, onkey, done
+from turtle import Screen, clear, goto, dot, update, ontimer, setup, hideturtle, up, tracer, onscreenclick, listen, pencolor, fillcolor, write, bgcolor, begin_fill, end_fill, forward, left
+import os
+import subprocess
+import sys
+
 from freegames import vector
+
 
 class CannonGame:
     def __init__(self):
@@ -8,6 +13,7 @@ class CannonGame:
         self.speed = vector(0, 0)
         self.targets = []
         self.game_running = True
+        self.screen = Screen()  # Screen 객체를 인스턴스 변수로 초기화
 
     def tap(self, x, y):
         """Respond to screen tap."""
@@ -36,10 +42,9 @@ class CannonGame:
 
     def move(self):
         """Move ball and targets."""
-        
         if not self.game_running:
             return
-        
+
         if randrange(40) == 0:
             y = randrange(-150, 150)
             target = vector(200, y)
@@ -67,7 +72,7 @@ class CannonGame:
                 return
 
         ontimer(self.move, 50)
-        
+
     def game_over(self):
         """Handle game over state."""
         self.game_running = False
@@ -81,101 +86,118 @@ class CannonGame:
 
         # Display buttons
         self.show_buttons()
-        
-    def game_over(self):
-        """Handle game over state."""
-        self.game_running = False
-        clear()
-        up()
 
-        # Display Game Over text
-        goto(0, 100)
-        pencolor('red')
-        write("GAME OVER!", align="center", font=("Arial", 30, "normal"))
+    def draw_button(self, x, y, text, action):
+        """Draw a button and bind it to an action."""
+        # Draw button rectangle
+        goto(x, y)
+        pencolor('black')
+        fillcolor('lightgray')
+        begin_fill()
+        for _ in range(2):
+            forward(140)
+            left(90)
+            forward(40)
+            left(90)
+        end_fill()
 
-        # Display buttons
-        self.show_buttons()
+        # Write button text
+        goto(x + 70, y + 10)
+        write(text, align="center", font=("Arial", 16, "normal"))
+
+        # Store button dimensions for manual click detection
+        button_area = {
+            "x_start": x,
+            "y_start": y,
+            "x_end": x + 140,
+            "y_end": y + 40,
+            "action": action,
+        }
+        # Add button to a list of clickable areas
+        if not hasattr(self, "buttons"):
+            self.buttons = []
+        self.buttons.append(button_area)
+
+    def handle_click(self, cx, cy):
+        """Handle button clicks."""
+        # Log the click position
+        print(f"Click detected at ({cx}, {cy})")
+
+        # Check if click is within any button bounds
+        for button in self.buttons:
+            if button["x_start"] <= cx <= button["x_end"] and button["y_start"] <= cy <= button["y_end"]:
+                print(f"Button clicked: executing action {button['action'].__name__}")
+                button["action"]()
+                return
+        print("Click outside button bounds.")  # Debug log
 
     def show_buttons(self):
-        """Display Play Again and Back to Menu buttons."""
-        button_spacing = 20  # 버튼 간격
-        button_width = 100   # 버튼 기본 너비 (픽셀 단위)
-        left_button_x = -(button_width + button_spacing) // 2  # 왼쪽 버튼 X 좌표
-        right_button_x = (button_width + button_spacing) // 2  # 오른쪽 버튼 X 좌표
+        """Show Play Again and Main Menu buttons."""
+        print("Displaying buttons...")
+        self.buttons = []  # Reset the list of clickable areas
 
-        # 버튼 배치
-        self.draw_button(left_button_x, -50, 'green', "Play Again")
-        self.draw_button(right_button_x, -50, 'blue', "Back to Menu")
+        # Draw Play Again button
+        self.draw_button(-70, -50, "Play Again", self.restart_game)
 
-        update()
-        onscreenclick(self.handle_click)
+        # Draw Main Menu button
+        self.draw_button(-70, -120, "Main Menu", self.go_to_main_menu)
 
-
-
-    def draw_button(self, x, y, button_color, text):
-        """텍스트 크기에 맞춘 버튼 그리기"""
-        up()
-        goto(x, y)
-
-        # 텍스트 길이에 따라 버튼 크기 동적 조정
-        text_length = len(text)
-        width = max(3, text_length * 1.5)  # 버튼 너비 계산 (텍스트 길이에 비례)
-        height = 2  # 버튼 높이
-
-        # 버튼 그리기
-        shapesize(height, width)  # 버튼 크기 설정
-        shape('square')
-        fillcolor(button_color)
-        stamp()
-
-        # 텍스트 쓰기
-        goto(x, y - 6)  # 텍스트를 중앙에 맞추기 위해 위치 조정
-        pencolor('white')
-        write(text, align="center", font=("Arial", 12, "bold"))
+        # Rebind onclick to use updated handle_click method
+        self.screen.onclick(self.handle_click)
 
 
 
 
-
-    def handle_click(self, x, y):
-        """Handle button click events."""
-        if not self.game_running:
-            # Play Again button
-            if -115 < x < -25 and -70 < y < -30:
-                self.reset_game()
-            # Back to Menu button
-            elif 25 < x < 115 and -70 < y < -30:
-                self.cleanup()
-                try:
-                    from mainmenu import MainMenu  # Placeholder for menu functionality
-                    menu = MainMenu()
-                    menu.run()
-                except Exception as e:
-                    print("Error returning to main menu:", e)
-
-    def reset_game(self):
-        """Reset and restart the game."""
+    def restart_game(self):
+        """Restart the game."""
+        # 게임 상태 초기화
+        self.ball = vector(-200, -200)
+        self.speed = vector(0, 0)
+        self.targets = []
+        self.game_running = True
+        
+        # 화면 초기화
         clear()
-        self.__init__()
-        self.run()
+        
+        # 게임 재시작
+        self.screen.onscreenclick(self.tap)
+        self.move()
+
+    def go_to_main_menu(self):
+        """Go to the main menu."""
+        self.cleanup()
+        self.launch_main_menu()
+
+    def launch_main_menu(self):
+        """Launch the main menu."""
+        python_executable = sys.executable  # Get the Python executable path
+        mainmenu_path = os.path.join(os.path.dirname(__file__), "mainmenu.py")  # Path to mainmenu.py
+        subprocess.Popen([python_executable, mainmenu_path])
+
 
     def cleanup(self):
         """Clean up resources."""
         clear()
         self.game_running = False
+        # Stop handling events before closing the screen
+        self.screen.onclick(None)  # Remove click events
+        try:
+            self.screen.bye()  # Turtle 창을 완전히 닫음
+        except Exception as e:
+            print(f"Error closing Turtle screen: {e}")  # Debug log
 
     def run(self):
         """Run the cannon game."""
-        screen = Screen()
         setup(420, 420, 370, 0)
+        self.screen.bgcolor('white')  # self.screen을 사용하여 Screen 객체에 접근
         hideturtle()
         up()
         tracer(False)
         listen()
-        screen.onscreenclick(self.tap)
+        self.screen.onscreenclick(self.tap)
         self.move()
-        done()
-        # screen.mainloop()
+        self.screen.mainloop()
+
 
 if __name__ == "__main__":
     game = CannonGame()

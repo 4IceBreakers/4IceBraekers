@@ -1,10 +1,9 @@
-# main.py
 import pygame
 import sys
 import os
 from canon import CannonGame
 from pacman import PacmanGame
-from tiles import run_tile_game
+from tiles import TileGame  # TileGame 클래스를 가져옵니다
 
 # Pygame 초기화
 pygame.init()
@@ -39,6 +38,7 @@ def draw_gradient_background(surface):
         ratio = y / SCREEN_HEIGHT
         color = [int(LIGHT_BLUE[i] * (1 - ratio) + DEEP_SKY_BLUE[i] * ratio) for i in range(3)]
         pygame.draw.line(surface, color, (0, y), (SCREEN_WIDTH, y))
+
 
 class Button:
     def __init__(self, x, y, width, height, text, color):
@@ -85,6 +85,7 @@ class Button:
                 return self.text
         return None
 
+
 class MainMenu:
     def __init__(self):
         button_width = 200
@@ -105,7 +106,6 @@ class MainMenu:
             Button(SCREEN_WIDTH//2 - button_width//2, start_y + gap*4, button_width, button_height, 
                   "종료", (200, 50, 50))
         ]
-        
         
     def run(self):
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -132,18 +132,19 @@ class MainMenu:
                         return
                     elif result == "타일즈":
                         pygame.quit()
-                        run_tile_game()
+                        game = TileGame()  # TileGame 클래스를 인스턴스화
+                        game.run()
                         pygame.init()
                         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                         pygame.display.set_caption("미니게임 컬렉션")
-                        return  # 메인 메뉴로 복귀
+                        return
                     elif result == "캐논":
                         pygame.quit()
                         game = CannonGame()
                         game.run()
                         pygame.init()
                         pygame.display.set_caption("미니게임 컬렉션")
-                        return  # 메인 메뉴로 복귀
+                        return
                     elif result:
                         print(f"{result} 게임 시작!")
             
@@ -168,6 +169,7 @@ class MainMenu:
             
             pygame.display.flip()
             clock.tick(60)
+
 
 if __name__ == "__main__":
     while True:

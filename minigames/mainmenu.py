@@ -4,6 +4,8 @@ import os
 from canon import CannonGame
 from pacman import PacmanGame
 from tiles import TileGame  # TileGame 클래스를 가져옵니다
+from memory import MemoryGame
+
 
 # Pygame 초기화
 pygame.init()
@@ -145,6 +147,13 @@ class MainMenu:
                         pygame.init()
                         pygame.display.set_caption("미니게임 컬렉션")
                         return
+                    elif result == "메모리":  # 메모리 버튼 클릭 시
+                        pygame.quit()
+                        memory_game = MemoryGame()  # MemoryGame 객체 생성
+                        memory_game.run()  # 메모리 게임 실행
+                        pygame.init()
+                        pygame.display.set_caption("미니게임 컬렉션")
+                        return  # 메인 메뉴로 복귀
                     elif result:
                         print(f"{result} 게임 시작!")
             

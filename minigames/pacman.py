@@ -4,6 +4,8 @@ from freegames import floor, vector
 from turtle import TurtleGraphicsError
 import pygame
 import sys
+import subprocess
+import os
 
 class PacmanGame:
     def __init__(self):
@@ -41,7 +43,7 @@ class PacmanGame:
             vector(0, -5),
         ]
         
-        # 게임 맵
+        # 게임 맵 데이터 (생략)
         self.tiles = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
@@ -66,11 +68,22 @@ class PacmanGame:
         ]
 
     def cleanup(self):
-        """게임 종료 시 리소스 정리"""
+        """메인 메뉴로 돌아갈 때 리소스 정리"""
         self.game_running = False
         try:
             clear()
             clearscreen()
+            getscreen().bye()  # 터틀 스크린 완전히 종료
+        except:
+            pass
+
+    def reset_cleanup(self):
+        """게임 재시작 시 리소스 정리"""
+        self.game_running = False
+        try:
+            clear()
+            clearscreen()
+            # 터틀 스크린은 종료하지 않음
         except:
             pass
 
@@ -136,54 +149,58 @@ class PacmanGame:
 
         if self.power_up_duration > 0:
             self.power_up_duration -= 1
-        
+
         writer = self.writer
         if self.valid(self.pacman + self.aim):
             self.pacman.move(self.aim)
-        
+
         index = self.offset(self.pacman)
         if index is not None:
             if self.tiles[index] == 1:
                 self.tiles[index] = 2
                 self.state['score'] += 1
                 self.cookies_left -= 1
-                
+
                 x = (index % 20) * 20 - 200
                 y = 180 - (index // 20) * 20
-                
+
                 self.path.color('blue')
                 self.path.fillcolor('blue')
                 self.square(x, y)
-                
+
                 if self.cookies_left == 0:
                     return self.win()
-                    
+
             elif self.tiles[index] == 3:
                 self.tiles[index] = 2
                 self.power_up_duration = 30
                 self.state['score'] += 5
                 self.cookies_left -= 1
-                
+
                 x = (index % 20) * 20 - 200
                 y = 180 - (index // 20) * 20
-                
+
                 self.path.color('blue')
                 self.path.fillcolor('blue')
                 self.square(x, y)
-                
+
                 if self.cookies_left == 0:
                     return self.win()
-        
+
         writer.clear()
-        writer.write(f"Score: {self.state['score']} Cookies left: {self.cookies_left}",
-                    align="right", font=("Arial", 16, "normal"))
-        
+        writer.up()
+        writer.goto(160, 190)  # y 좌표를 190으로 변경하여 점수 표시 위치를 위로 올림
+        writer.down()
+        writer.color('white')  # 펜 색상을 설정합니다.
+        writer.write(f"Score: {self.state['score']}  Cookies left: {self.cookies_left}",
+                     align="right", font=("Arial", 16, "normal"))
+
         clear()
-        
+
         up()
         goto(self.pacman.x + 10, self.pacman.y + 10)
         dot(20, 'yellow')
-        
+
         for point, course in self.ghosts:
             if not self.valid(point + course):
                 options = []
@@ -193,12 +210,12 @@ class PacmanGame:
                 if options:
                     course.x, course.y = random.choice(options)
                 continue
-                
+
             point.move(course)
-            
+
             up()
             goto(point.x + 10, point.y + 10)
-            
+
             if self.power_up_duration > 0:
                 dot(20, 'purple')
                 if abs(self.pacman - point) < 20:
@@ -209,7 +226,7 @@ class PacmanGame:
                 dot(20, 'red')
                 if abs(self.pacman - point) < 20:
                     return self.lose()
-        
+
         update()
         if self.game_running:
             ontimer(self.move, 100)
@@ -233,15 +250,15 @@ class PacmanGame:
         """게임 종료 화면 표시"""
         clear()
         up()
-        
+
         goto(0, 100)
         pencolor(text_color)
         write(message, align="center", font=("Arial", 30, "normal"))
-        
+
         goto(0, 50)
         pencolor('white')
         write(f"Final Score: {self.state['score']}", align="center", font=("Arial", 20, "normal"))
-        
+
         self.show_buttons()
         onkey(None, 'Right')
         onkey(None, 'Left')
@@ -250,6 +267,7 @@ class PacmanGame:
 
     def show_buttons(self):
         """Play Again과 Back to Menu 버튼 표시"""
+        self.buttons = []
         self.draw_button(-70, -50, 'green', "Play Again")
         self.draw_button(70, -50, 'blue', "Back to Menu")
         update()
@@ -272,24 +290,24 @@ class PacmanGame:
         if not self.game_running:
             # Play Again 버튼 영역
             if -115 < x < -25 and -70 < y < -30:
-                self.cleanup()
+                self.reset_cleanup()
                 self.reset_game()
             # Back to Menu 버튼 영역
             elif 25 < x < 115 and -70 < y < -30:
-                try:
-                    # 터틀 창 완전히 종료
-                    self.cleanup()
-                    getscreen().bye()
-                    
-                    # Pygame 초기화 및 메인 메뉴 시작
-                    pygame.init()
-                    from mainmenu import MainMenu
-                    menu = MainMenu()
-                    menu.run()
-                except Exception as e:
-                    print(f"메인 메뉴로 돌아가는 중 오류 발생: {e}")
-                finally:
-                    return True
+                self.cleanup()
+                self.go_to_main_menu()
+
+    def go_to_main_menu(self):
+        """메인 메뉴로 이동"""
+        self.cleanup()
+        self.launch_main_menu()
+        sys.exit()  # 현재 프로세스 종료
+
+    def launch_main_menu(self):
+        """메인 메뉴 실행"""
+        python_executable = sys.executable  # Python 실행 파일 경로 가져오기
+        mainmenu_path = os.path.join(os.path.dirname(__file__), "mainmenu.py")
+        subprocess.Popen([python_executable, mainmenu_path])
 
     def reset_game(self):
         """게임 재시작"""
@@ -298,10 +316,11 @@ class PacmanGame:
             clear()
             clearscreen()
             resetscreen()
-            
+            self.game_running = True
+
             # 게임 상태 완전 초기화
             self.__init__()
-            
+
             # 게임 새로 시작
             self.setup_game()
         except TurtleGraphicsError:
@@ -313,12 +332,13 @@ class PacmanGame:
             resetscreen()
         except:
             pass
-            
+
         setup(420, 420, 370, 0)
         hideturtle()
         tracer(False)
-        self.writer.goto(160, 160)
-        self.writer.color('white')
+        self.writer.up()
+        # self.writer.hideturtle()  # 이 부분을 제거합니다.
+        self.writer.color('white')  # 펜 색상을 설정합니다.
         listen()
         onkey(lambda: self.change(5, 0), 'Right')
         onkey(lambda: self.change(-5, 0), 'Left')
